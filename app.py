@@ -67,7 +67,10 @@ with zipfile.ZipFile(zip_buffer, "w") as zip_file:
         zip_file.writestr(filename, content)
 
 st.success("✅ 翻訳が完了しました！")
-st.download_button(
+if uploaded_file is not None:
+    # （ここに全部の処理）
+    # ダウンロードボタンもここ
+    st.download_button(
     label="📦 翻訳済みSRTをZIPでダウンロード",
     data=zip_buffer.getvalue(),
     file_name="translated_srt_files.zip",
