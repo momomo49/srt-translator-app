@@ -72,7 +72,7 @@ st.download_button(
     data=zip_buffer.getvalue(),
     file_name="translated_srt_files.zip",
     mime="application/zip"
-)
+    )
 
 else:
     st.info("まずは日本語の.srtファイルをアップロードしてください。")
