@@ -4,7 +4,7 @@ import zipfile
 import io
 from googletrans import Translator
 
-st.title("🌎 日本語SRT一括翻訳＆ダウンロードツール")
+st.title("🌎 日本語SRT・SBV一括翻訳＆ダウンロードツール")
 
 # 言語リスト（ターゲット言語）
 languages = {
@@ -16,9 +16,10 @@ languages = {
     "韓国語": "ko"
 }
 
-uploaded_file = st.file_uploader("日本語の.srtファイルをアップロードしてください", type=["srt"])
+uploaded_file = st.file_uploader("日本語の.srt または .sbv ファイルをアップロードしてください", type=["srt", "sbv"])
 
 if uploaded_file is not None:
+    filename = uploaded_file.name
     srt_text = uploaded_file.read().decode("utf-8")
     lines = srt_text.splitlines()
 
@@ -27,23 +28,49 @@ if uploaded_file is not None:
     # タイムコードとテキストの分離
     timed_blocks = []
     block = {"index": "", "time": "", "text": ""}
-    for line in lines:
-        if line.isdigit():
-            if block["index"]:
-                timed_blocks.append(block)
-                block = {"index": "", "time": "", "text": ""}
-            block["index"] = line
-        elif "-->" in line:
-            block["time"] = line
-        elif line.strip() == "":
-            continue
-        else:
-            if block["text"]:
-                block["text"] += "\n" + line
+    idx = 1
+
+    if filename.endswith(".sbv"):
+        # SBV形式用の処理
+        for line in lines:
+            if "," in line and "." in line:
+                if block["index"]:
+                    timed_blocks.append(block)
+                    block = {"index": "", "time": "", "text": ""}
+                start_end = line.split(",")
+                start = start_end[0].replace(".", ",")
+                end = start_end[1].replace(".", ",")
+                block["index"] = str(idx)
+                idx += 1
+                block["time"] = f"{start} --> {end}"
+            elif line.strip() == "":
+                continue
             else:
-                block["text"] = line
-    if block["index"]:
-        timed_blocks.append(block)
+                if block["text"]:
+                    block["text"] += "\n" + line
+                else:
+                    block["text"] = line
+        if block["index"]:
+            timed_blocks.append(block)
+    else:
+        # SRT形式用の処理
+        for line in lines:
+            if line.isdigit():
+                if block["index"]:
+                    timed_blocks.append(block)
+                    block = {"index": "", "time": "", "text": ""}
+                block["index"] = line
+            elif "-->" in line:
+                block["time"] = line
+            elif line.strip() == "":
+                continue
+            else:
+                if block["text"]:
+                    block["text"] += "\n" + line
+                else:
+                    block["text"] = line
+        if block["index"]:
+            timed_blocks.append(block)
 
     # 各言語ごとの翻訳SRT生成
     translated_srt_files = {}
@@ -74,4 +101,4 @@ if uploaded_file is not None:
     )
 
 else:
-    st.info("まずは日本語の.srtファイルをアップロードしてください。")
+    st.info("まずは日本語の.srt または .sbv ファイルをアップロードしてください。")
